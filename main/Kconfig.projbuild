@@ -1,0 +1,33 @@
+menu "Mi-light simulator"
+
+config DEFAULT_WIFI_ESSID
+    string "Default WiFi ESSID"
+    default "myssid"
+    help
+        WiFi SSID to connect to by default.
+
+config DEFAULT_WIFI_PASSWD
+    string "Default WiFi Password"
+    default "mypass"
+    help
+        WiFi Password to use by default.
+
+config MQTT_URL
+    string "MQTT URL"
+    default "mqtt://iot.eclipse.org"
+    help
+        MQTT Url to connect to.
+
+config MQTT_CLIENT_ID
+    string "MQTT Client ID"
+    default "wafdmx-1"
+    help
+        MQTT ClientID to use.
+
+config MQTT_PREFIX
+    string "MQTT topic prefix"
+    default "waf"
+    help
+        MQTT Topic prefix.
+
+endmenu
