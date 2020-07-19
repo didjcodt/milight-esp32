@@ -7,7 +7,6 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-
 #include "mqtt.h"
 
 // General command buffer is 5 bytes long, MSB is defined as the class.
@@ -64,7 +63,7 @@
 // Saturation is ranged on 0x00 --- 0x7F
 // Temperature is ranged on 0X80 --- 0xFF
 //
-static int no_touch[]    = {0x02, 0x00, 0x00, 0x00, 0x00};
+static int no_touch[] = {0x02, 0x00, 0x00, 0x00, 0x00};
 static int slider_template[] = {0x03, 0x00, 0x00, 0x00, 0x00};
 
 #define DATA_SIZE 5
@@ -113,9 +112,13 @@ void send_key(int i2c_bus, uint8_t keycode) {
     data = memcpy(no_touch, data, sizeof(no_touch));
     data[1] = keycode;
 
-    size_t d_size = i2c_slave_write_buffer(i2c_bus-1, data, DATA_SIZE, 1000 / portTICK_RATE_MS);
-    if(d_size != DATA_SIZE) {
-        ESP_LOGW(TAG, "Key payload not written correctly, only %d bytes written out of %d", d_size, DATA_SIZE);
+    size_t d_size = i2c_slave_write_buffer(i2c_bus - 1, data, DATA_SIZE,
+                                           1000 / portTICK_RATE_MS);
+    if (d_size != DATA_SIZE) {
+        ESP_LOGW(TAG,
+                 "Key payload not written correctly, only %d bytes written out "
+                 "of %d",
+                 d_size, DATA_SIZE);
     }
 }
 
@@ -123,34 +126,34 @@ void i2c_init(int sda1, int scl1, int sda2, int scl2) {
     int i2c_slave_1 = I2C_NUM_0;
     int i2c_slave_2 = I2C_NUM_1;
 
-    i2c_config_t conf_slave_1 = {.sda_io_num = sda1,
+    i2c_config_t conf_slave_1 = {
+        .sda_io_num = sda1,
         .sda_pullup_en = GPIO_PULLUP_ENABLE,
         .scl_io_num = scl1,
         .scl_pullup_en = GPIO_PULLUP_ENABLE,
         .mode = I2C_MODE_SLAVE,
-        .slave = {.addr_10bit_en = 0,
-            .slave_addr = I2C_SLAVE_ADDR}};
+        .slave = {.addr_10bit_en = 0, .slave_addr = I2C_SLAVE_ADDR}};
 
-    i2c_config_t conf_slave_2 = {.sda_io_num = sda2,
+    i2c_config_t conf_slave_2 = {
+        .sda_io_num = sda2,
         .sda_pullup_en = GPIO_PULLUP_ENABLE,
         .scl_io_num = scl2,
         .scl_pullup_en = GPIO_PULLUP_ENABLE,
         .mode = I2C_MODE_SLAVE,
-        .slave = {.addr_10bit_en = 0,
-            .slave_addr = I2C_SLAVE_ADDR}};
+        .slave = {.addr_10bit_en = 0, .slave_addr = I2C_SLAVE_ADDR}};
 
     i2c_param_config(i2c_slave_1, &conf_slave_1);
     i2c_param_config(i2c_slave_2, &conf_slave_2);
 
-    ESP_ERROR_CHECK(i2c_driver_install(
-                i2c_slave_1, I2C_MODE_SLAVE, I2C_SLAVE_RX_BUF_LEN,
-                I2C_SLAVE_TX_BUF_LEN, 0));
+    ESP_ERROR_CHECK(i2c_driver_install(i2c_slave_1, I2C_MODE_SLAVE,
+                                       I2C_SLAVE_RX_BUF_LEN,
+                                       I2C_SLAVE_TX_BUF_LEN, 0));
 
-    ESP_ERROR_CHECK(i2c_driver_install(
-                i2c_slave_2, I2C_MODE_SLAVE, I2C_SLAVE_RX_BUF_LEN,
-                I2C_SLAVE_TX_BUF_LEN, 0));
+    ESP_ERROR_CHECK(i2c_driver_install(i2c_slave_2, I2C_MODE_SLAVE,
+                                       I2C_SLAVE_RX_BUF_LEN,
+                                       I2C_SLAVE_TX_BUF_LEN, 0));
 
-    xTaskCreateStatic(&keypress_simulator, "keypress_simulator", KEYPRESS_SIMULATOR_STACK_SIZE,
-                      NULL, tskIDLE_PRIORITY + 1, keypress_simulator_stack,
-                      &keypress_simulator_buffer);
+    xTaskCreateStatic(&keypress_simulator, "keypress_simulator",
+                      KEYPRESS_SIMULATOR_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1,
+                      keypress_simulator_stack, &keypress_simulator_buffer);
 }

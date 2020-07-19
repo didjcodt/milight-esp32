@@ -12,18 +12,18 @@ void send_key(int i2c_bus, uint8_t keycode);
 
 #define RELEASE_KEY 0x00
 // Keycode defines for I2C 1
-#define GENERAL_ON  (0x01 << 3)
+#define GENERAL_ON (0x01 << 3)
 #define GENERAL_OFF (0x01 << 4)
 #define SPEED_MINUS (0x01 << 5)
-#define MODE        (0x01 << 6)
-#define SPEED_PLUS  (0x01 << 7)
+#define MODE (0x01 << 6)
+#define SPEED_PLUS (0x01 << 7)
 
 // Keycode defines for I2C 2
 #define ZONE_01_OFF (0x01 << 5)
-#define ZONE_01_ON  (0x01 << 4)
+#define ZONE_01_ON (0x01 << 4)
 #define ZONE_02_OFF (0x01 << 1)
-#define ZONE_02_ON  (0x01 << 0)
+#define ZONE_02_ON (0x01 << 0)
 #define ZONE_03_OFF (0x01 << 3)
-#define ZONE_03_ON  (0x01 << 2)
+#define ZONE_03_ON (0x01 << 2)
 #define ZONE_04_OFF (0x01 << 7)
-#define ZONE_04_ON  (0x01 << 6)
+#define ZONE_04_ON (0x01 << 6)
