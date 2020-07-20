@@ -6,9 +6,18 @@
 #define I2C_SLAVE_RX_BUF_LEN 512
 #define I2C_SLAVE_TX_BUF_LEN 512
 
-void i2c_init(int sda1, int scl1, int sda2, int scl2);
+void i2c_init();
 
 void send_key(int i2c_bus, uint8_t keycode);
+
+// GPIO Definition
+#define PIN_NUM_SDA1 12
+#define PIN_NUM_SCL1 13
+#define PIN_NUM_SDA2 19
+#define PIN_NUM_SCL2 2
+#define PIN_NUM_INT1 33
+#define PIN_NUM_INT2 26
+#define PIN_NUM_LED  25
 
 #define RELEASE_KEY 0x00
 // Keycode defines for I2C 1

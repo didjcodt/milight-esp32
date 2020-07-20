@@ -63,7 +63,7 @@
 // Saturation is ranged on 0x00 --- 0x7F
 // Temperature is ranged on 0X80 --- 0xFF
 //
-static int no_touch[] = {0x02, 0x00, 0x00, 0x00, 0x00};
+static const uint8_t no_touch[] = {0x02, 0x00, 0x00, 0x00, 0x00};
 static int slider_template[] = {0x03, 0x00, 0x00, 0x00, 0x00};
 
 #define DATA_SIZE 5
@@ -101,7 +101,7 @@ static void keypress_simulator(void *pvParameter) {
 // - Set INT pin to 1
 // - Send keycode
 // - Set INT pin to 0
-// - Wait for LED pin to be 0
+// - Wait for LED pin to be 0, or 50 ms
 // - Set INT pin to 1
 // - Send key release
 // - Set INT pin to 0
@@ -109,9 +109,15 @@ static void keypress_simulator(void *pvParameter) {
 void send_key(int i2c_bus, uint8_t keycode) {
     // Take key payload template and add keycode in it
     uint8_t *data = (uint8_t *)malloc(DATA_SIZE);
-    data = memcpy(no_touch, data, sizeof(no_touch));
+    data = memcpy(data, no_touch, sizeof(no_touch));
     data[1] = keycode;
 
+    uint8_t int_pin = i2c_bus == 0 ? PIN_NUM_INT1 : PIN_NUM_INT2;
+
+    // Set INT pin to 1
+    gpio_set_level(int_pin, 1);
+
+    // Write keycode
     size_t d_size = i2c_slave_write_buffer(i2c_bus - 1, data, DATA_SIZE,
                                            1000 / portTICK_RATE_MS);
     if (d_size != DATA_SIZE) {
@@ -120,24 +126,56 @@ void send_key(int i2c_bus, uint8_t keycode) {
                  "of %d",
                  d_size, DATA_SIZE);
     }
+
+    // Set INT pin to 0
+    gpio_set_level(int_pin, 0);
+
+    // Wait for 50ms
+    vTaskDelay(50 / portTICK_PERIOD_MS);
+
+    // Set INT pin to 1
+    gpio_set_level(int_pin, 1);
+
+    // Wait for 50ms
+    vTaskDelay(50 / portTICK_PERIOD_MS);
+
+    // Send key release
+    d_size = i2c_slave_write_buffer(i2c_bus - 1, &no_touch[0], DATA_SIZE,
+            1000 / portTICK_RATE_MS);
+    if (d_size != DATA_SIZE) {
+        ESP_LOGW(TAG,
+                 "Key payload not written correctly, only %d bytes written out "
+                 "of %d",
+                 d_size, DATA_SIZE);
+    }
+
+    // Set INT pin to 0
+    gpio_set_level(int_pin, 0);
+
+    // Wait for 50ms
+    vTaskDelay(50 / portTICK_PERIOD_MS);
+
+    // Set INT pin to 1
+    gpio_set_level(int_pin, 1);
 }
 
-void i2c_init(int sda1, int scl1, int sda2, int scl2) {
+void i2c_init() {
+    // Configure I2C slaves
     int i2c_slave_1 = I2C_NUM_0;
     int i2c_slave_2 = I2C_NUM_1;
 
     i2c_config_t conf_slave_1 = {
-        .sda_io_num = sda1,
+        .sda_io_num = PIN_NUM_SDA1,
         .sda_pullup_en = GPIO_PULLUP_ENABLE,
-        .scl_io_num = scl1,
+        .scl_io_num = PIN_NUM_SCL1,
         .scl_pullup_en = GPIO_PULLUP_ENABLE,
         .mode = I2C_MODE_SLAVE,
         .slave = {.addr_10bit_en = 0, .slave_addr = I2C_SLAVE_ADDR}};
 
     i2c_config_t conf_slave_2 = {
-        .sda_io_num = sda2,
+        .sda_io_num = PIN_NUM_SDA2,
         .sda_pullup_en = GPIO_PULLUP_ENABLE,
-        .scl_io_num = scl2,
+        .scl_io_num = PIN_NUM_SCL2,
         .scl_pullup_en = GPIO_PULLUP_ENABLE,
         .mode = I2C_MODE_SLAVE,
         .slave = {.addr_10bit_en = 0, .slave_addr = I2C_SLAVE_ADDR}};
@@ -152,6 +190,25 @@ void i2c_init(int sda1, int scl1, int sda2, int scl2) {
     ESP_ERROR_CHECK(i2c_driver_install(i2c_slave_2, I2C_MODE_SLAVE,
                                        I2C_SLAVE_RX_BUF_LEN,
                                        I2C_SLAVE_TX_BUF_LEN, 0));
+
+    // Configure Interrupt pins and LED/ACK pin
+    gpio_config_t conf_int = {
+        .intr_type = GPIO_INTR_DISABLE,
+        .mode = GPIO_MODE_OUTPUT,
+        .pin_bit_mask = ((1ULL<<PIN_NUM_INT1) | (1ULL<<PIN_NUM_INT2)),
+        .pull_down_en = 0,
+        .pull_up_en = 1
+    };
+    gpio_config(&conf_int);
+
+    gpio_config_t conf_led = {
+        .intr_type = GPIO_INTR_DISABLE,
+        .mode = GPIO_MODE_INPUT,
+        .pin_bit_mask = (1ULL<<PIN_NUM_LED),
+        .pull_down_en = 0,
+        .pull_up_en = 0
+    };
+    gpio_config(&conf_led);
 
     xTaskCreateStatic(&keypress_simulator, "keypress_simulator",
                       KEYPRESS_SIMULATOR_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1,
