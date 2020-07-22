@@ -6,7 +6,7 @@
 #define I2C_SLAVE_RX_BUF_LEN 512
 #define I2C_SLAVE_TX_BUF_LEN 512
 
-void i2c_init();
+void milight_init();
 
 void send_key(int i2c_bus, uint8_t keycode);
 

@@ -1,4 +1,4 @@
-#include "i2c.h"
+#include "milight.h"
 
 #include <string.h>
 
@@ -159,7 +159,7 @@ void send_key(int i2c_bus, uint8_t keycode) {
     gpio_set_level(int_pin, 1);
 }
 
-void i2c_init() {
+void milight_init() {
     // Configure I2C slaves
     int i2c_slave_1 = I2C_NUM_0;
     int i2c_slave_2 = I2C_NUM_1;

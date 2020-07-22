@@ -12,7 +12,7 @@
 #include "nvs_flash.h"
 
 // Other
-#include "i2c.h"
+#include "milight.h"
 #include "mqtt.h"
 #include "ota.h"
 #include "wifi.h"
@@ -54,8 +54,8 @@ void app_main() {
     }
     ESP_ERROR_CHECK(err);
 
-    // Initialize spi device
-    i2c_init(PIN_NUM_SDA1, PIN_NUM_SCL1, PIN_NUM_SDA2, PIN_NUM_SCL2);
+    // Initialize milight device simulator
+    milight_init();
 
     // Wifi init initalizes net_event_group and tcpip stack!
     wifi_init();
