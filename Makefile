@@ -4,6 +4,7 @@
 #
 
 PROJECT_NAME := milight
+EXTRA_COMPONENT_DIRS := components
 IDF_PATH ?= /home/kaizen/esp-idf
 
 include $(IDF_PATH)/make/project.mk
