@@ -17,12 +17,6 @@
 #include "ota.h"
 #include "wifi.h"
 
-// GPIO Definition
-#define PIN_NUM_SDA1 13
-#define PIN_NUM_SCL1 14
-#define PIN_NUM_SDA2 15
-#define PIN_NUM_SCL2 16
-
 static const char *TAG = "MAIN_APP";
 
 void init_logging() {

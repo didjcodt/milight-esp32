@@ -2,7 +2,7 @@
 
 #include "driver/i2c.h"
 
-#define I2C_SLAVE_ADDR 0x53
+#define I2C_MILIGHT_SLAVE_ADDR 0x53
 #define I2C_SLAVE_RX_BUF_LEN 512
 #define I2C_SLAVE_TX_BUF_LEN 512
 
@@ -17,7 +17,7 @@ void send_key(int i2c_bus, uint8_t keycode);
 #define PIN_NUM_SCL2 2
 #define PIN_NUM_INT1 33
 #define PIN_NUM_INT2 26
-#define PIN_NUM_LED  25
+#define PIN_NUM_LED 25
 
 #define RELEASE_KEY 0x00
 // Keycode defines for I2C 1
