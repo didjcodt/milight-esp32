@@ -103,6 +103,11 @@ static void i2c_slave_hw_enable(i2c_port_t i2c_num) {
 
 #define DATA_SIZE 5
 static uint8_t keystate_0[] = {0x02, 0x00, 0x00, 0x00, 0x00};
+static uint8_t keystate_1[] = {0x02, 0x00, 0x00, 0x00, 0x00};
+
+uint8_t* get_keystate(i2c_port_t i2c_num) {
+    return i2c_num == I2C_NUM_0 ? &keystate_0[0] : &keystate_1[0];
+}
 
 static void IRAM_ATTR i2c_isr_handler(void *arg) {
     // Get back contextual data

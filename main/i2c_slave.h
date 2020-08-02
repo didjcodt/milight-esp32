@@ -4,3 +4,5 @@
 
 esp_err_t i2c_slave_driver_install(i2c_port_t);
 esp_err_t i2c_slave_param_config(i2c_port_t, i2c_config_t*);
+
+uint8_t* get_keystate(i2c_port_t);

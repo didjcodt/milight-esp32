@@ -69,129 +69,28 @@
 static uint8_t no_touch[] = {0x02, 0x00, 0x00, 0x00, 0x00};
 // static int slider_template[] = {0x03, 0x00, 0x00, 0x00, 0x00};
 
-#define DATA_SIZE 5
-
 static const char *TAG = "I2C";
 
-/*
-#define KEYSTATE_FORCER_STACK_SIZE 2048
-StaticTask_t keystate_forcer_buffer;
-StackType_t keystate_forcer_stack[KEYSTATE_FORCER_STACK_SIZE];
-static void keystate_forcer(void *pvParameter) {
-    while (1) {
-        size_t d_size = i2c_slave_write_buffer(0, &keystate_0[0], DATA_SIZE,
-portMAX_DELAY); for( int length=0; length<5; length++ ) { printf( "%d ",
-keystate_0[ length ] );
-        }
-        printf( " total %d\n", d_size );
-    }
+static void send_click(i2c_port_t i2c_num, uint8_t button) {
+    uint8_t* keystate = get_keystate(i2c_num);
+    keystate[2] |= button;
+    vTaskDelay(10 / portTICK_PERIOD_MS);
+    keystate[2] ^= button;
+    vTaskDelay(10 / portTICK_PERIOD_MS);
 }
-*/
 
 #define KEYPRESS_SIMULATOR_STACK_SIZE 2048
 StaticTask_t keypress_simulator_buffer;
 StackType_t keypress_simulator_stack[KEYPRESS_SIMULATOR_STACK_SIZE];
 static void keypress_simulator(void *pvParameter) {
-    uint8_t* keystate_0;
-
     while (1) {
         ESP_LOGI(TAG, "GENERAL ON");
-        keystate_0[1] = GENERAL_ON;
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-        ESP_LOGI(TAG, "STOP");
-        keystate_0[1] = 0x00;
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        send_click(0, GENERAL_ON);
+        vTaskDelay(500 / portTICK_PERIOD_MS);
         ESP_LOGI(TAG, "GENERAL OFF");
-        keystate_0[1] = GENERAL_OFF;
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-        ESP_LOGI(TAG, "STOP");
-        keystate_0[1] = 0x00;
-        ESP_ERROR_CHECK(i2c_reset_tx_fifo(0));
-    }
-
-    while (1) {
-        ESP_LOGI(TAG, "GENERAL ON");
-        send_key(1, GENERAL_ON);
+        send_click(0, GENERAL_OFF);
         vTaskDelay(500 / portTICK_PERIOD_MS);
-        send_key(1, RELEASE_KEY);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-        ESP_LOGI(TAG, "GENERAL OFF");
-        send_key(1, GENERAL_OFF);
-        vTaskDelay(500 / portTICK_PERIOD_MS);
-        send_key(1, RELEASE_KEY);
-        vTaskDelay(2000 / portTICK_PERIOD_MS);
-        ESP_LOGI(TAG, "ZONE 1 ON");
-        send_key(1, ZONE_01_ON);
-        vTaskDelay(500 / portTICK_PERIOD_MS);
-        send_key(1, RELEASE_KEY);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-        ESP_LOGI(TAG, "ZONE 1 OFF");
-        send_key(1, ZONE_01_OFF);
-        vTaskDelay(500 / portTICK_PERIOD_MS);
-        send_key(1, RELEASE_KEY);
     }
-}
-
-// TODO:
-// - Set INT pin to 1
-// - Send keycode
-// - Set INT pin to 0
-// - Wait for LED pin to be 0, or 50 ms
-// - Set INT pin to 1
-// - Send key release
-// - Set INT pin to 0
-// - Wait for LED pin to be 1
-void send_key(int i2c_bus, uint8_t keycode) {
-    // Take key payload template and add keycode in it
-    uint8_t *data = (uint8_t *)malloc(DATA_SIZE);
-    data = memcpy(data, no_touch, sizeof(no_touch));
-    data[1] = keycode;
-
-    uint8_t int_pin = i2c_bus == 0 ? PIN_NUM_INT1 : PIN_NUM_INT2;
-
-    // Set INT pin to 1
-    gpio_set_level(int_pin, 1);
-
-    // Write keycode
-    size_t d_size = i2c_slave_write_buffer(i2c_bus - 1, data, DATA_SIZE,
-                                           1000 / portTICK_RATE_MS);
-    if (d_size != DATA_SIZE) {
-        ESP_LOGW(TAG,
-                 "Key payload not written correctly, only %d bytes written out "
-                 "of %d",
-                 d_size, DATA_SIZE);
-    }
-
-    // Set INT pin to 0
-    gpio_set_level(int_pin, 0);
-
-    // Wait for 50ms
-    vTaskDelay(50 / portTICK_PERIOD_MS);
-
-    // Set INT pin to 1
-    gpio_set_level(int_pin, 1);
-
-    // Wait for 50ms
-    vTaskDelay(50 / portTICK_PERIOD_MS);
-
-    // Send key release
-    d_size = i2c_slave_write_buffer(i2c_bus - 1, &no_touch[0], DATA_SIZE,
-                                    1000 / portTICK_RATE_MS);
-    if (d_size != DATA_SIZE) {
-        ESP_LOGW(TAG,
-                 "Key payload not written correctly, only %d bytes written out "
-                 "of %d",
-                 d_size, DATA_SIZE);
-    }
-
-    // Set INT pin to 0
-    gpio_set_level(int_pin, 0);
-
-    // Wait for 50ms
-    vTaskDelay(50 / portTICK_PERIOD_MS);
-
-    // Set INT pin to 1
-    gpio_set_level(int_pin, 1);
 }
 
 void milight_init() {
@@ -237,14 +136,7 @@ void milight_init() {
                               .pull_up_en = 0};
     gpio_config(&conf_led);
 
-    // Create a High Priority task to force the i2c TX buffer to always be full
-    // This is the only way as esp-idf is doing ultra weird things in the intr
-    // :(
-    // xTaskCreateStatic(&keystate_forcer, "keystate_forcer",
-    //                  KEYSTATE_FORCER_STACK_SIZE, NULL, configMAX_PRIORITIES -
-    //                  1, keystate_forcer_stack, &keystate_forcer_buffer);
-
-    //xTaskCreateStatic(&keypress_simulator, "keypress_simulator",
-    //                  KEYPRESS_SIMULATOR_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1,
-    //                  keypress_simulator_stack, &keypress_simulator_buffer);
+    xTaskCreateStatic(&keypress_simulator, "keypress_simulator",
+                      KEYPRESS_SIMULATOR_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1,
+                      keypress_simulator_stack, &keypress_simulator_buffer);
 }
